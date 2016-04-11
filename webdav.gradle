@@ -1,0 +1,51 @@
+repositories {
+  mavenCentral()
+}
+
+configurations {
+  webdavClasspath
+}
+
+dependencies {
+	webdavClasspath 'com.github.lookfirst:sardine:5.7'
+}
+
+ant.taskdef(
+	name: 'sardine',
+	classname: 'com.github.sardine.ant.SardineTask',
+	classpath: configurations.webdavClasspath.asPath
+)
+
+if (!project.hasProperty('webDAVURL')) {
+	ext.webDAVURL = null
+}
+
+if (!project.hasProperty('webDAVFileSetDirectory')) {
+  // Default is current folder
+  ext.webDAVFileSetDirectory = '.'
+}
+
+if (!project.hasProperty('webDAVFileSetNames')) {
+  // Default is to upload all files in this folder
+  ext.webDAVFileSetNames = ['*']
+}
+
+task webdav() {
+
+	doLast  {
+
+ 		ant.sardine() {
+
+ 			createDirectory(url: webDAVURL)
+
+			put(url: webDAVURL) {
+				fileset(dir: webDAVFileSetDirectory) {
+
+          webDAVFileSetNames.each { fileInclude ->
+              include(name: fileInclude)
+          }
+        }
+      }
+ 		}
+ 	}
+}
