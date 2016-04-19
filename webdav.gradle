@@ -1,3 +1,14 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+			classpath 'commons-io:commons-io:2.4'
+    }
+}
+
+
 repositories {
   mavenCentral()
 }
@@ -32,21 +43,72 @@ if (!project.hasProperty('webDAVFileSetNames')) {
 
 print "WebDAV URL ${webDAVURL}"
 
+
+import groovy.io.FileType
+
+def getDirectories() {
+
+	def result = []
+	new File(webDAVFileSetDirectory).eachFileRecurse (FileType.DIRECTORIES) { file ->
+		result << new File(webDAVFileSetDirectory).toURI().relativize( file.toURI() ).toString()
+	}
+	return result
+
+}
+
+
+def toPattern(filter) {
+
+	
+
+}
+
+import org.apache.commons.io.FilenameUtils
+
+def getFiles() {
+	def result = []
+	new File(webDAVFileSetDirectory).eachFileRecurse (FileType.FILES) { file ->
+		def fileToAdd =  new File(webDAVFileSetDirectory).toURI().relativize( file.toURI() ).toString()
+		webDAVFileSetNames.each() { token ->
+			if (FilenameUtils.wildcardMatch(fileToAdd, token)) {
+				result << fileToAdd
+				return
+			}
+		}
+	}
+	return result
+}
+
+
+def createWebDavDirectory(URL) {
+	println "create directory " + URL
+	ant.sardine() {
+    // Create directory first
+		createDirectory(url: URL)
+	}
+}
+
+def putFile(file, URL) {
+	def fileToUpload = new File(webDAVFileSetDirectory, file).getAbsolutePath()
+	println "putFile " + fileToUpload 
+	println "to " + URL
+	 ant.sardine() {
+		 	put(url: URL, file:fileToUpload)
+	 }
+}
+
 task webdav() << {
 
- 		ant.sardine() {
+	createWebDavDirectory(webDAVURL)
 
-      // Create directory first
- 			createDirectory(url: webDAVURL)
+	getDirectories().each() { directory ->
+		def URL = webDAVURL + directory
+		createWebDavDirectory(URL)
+	}
 
-      // Upload specified files
-			put(url: webDAVURL) {
-				fileset(dir: webDAVFileSetDirectory) {
+	getFiles().each() { file -> 
+		def URL = webDAVURL + file
+		putFile(file, URL)
+	}
 
-          webDAVFileSetNames.each { fileInclude ->
-              include(name: fileInclude)
-        }
-      }
-    }
- 	}
 }
