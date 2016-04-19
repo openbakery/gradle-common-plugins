@@ -1,0 +1,86 @@
+repositories {
+  mavenCentral()
+}
+
+configurations {
+	antClasspath
+}
+
+dependencies {
+  antClasspath 'ant:ant-javamail:1.+'
+  antClasspath 'javax.activation:activation:1.1.1'
+  antClasspath 'javax.mail:mail:1.+'
+}
+
+ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
+configurations.antClasspath.each { File jar ->
+	antClassLoader.addURL( jar.toURI().toURL() )
+}
+
+task sendMail() << {
+
+  if (!project.hasProperty('mailHost')) {
+  	ext.mailHost = 'frink.ciqua.com'
+  }
+
+  if (!project.hasProperty('mailSubject')) {
+    ext.mailSubject = nil
+  }
+
+  if (!project.hasProperty('mailPort')) {
+  	ext.mailPort = 25
+  }
+
+  if (!project.hasProperty('mailMessageMimeType')) {
+    ext.mailMessageMimeType = 'text/html'
+  }
+
+  if (!project.hasProperty('mailUser')) {
+    ext.mailUser = nil
+  }
+
+  def mailPassword = null
+  if (project.ext.properties.containsKey("mailPassword")) {
+  	mailPassword = project.ext.mailPassword
+  } else {
+  	mailPassword = System.console().readPassword("\nPlease enter the mail server password for user ${mailUser}")
+  }
+
+  if (!project.hasProperty('mailFrom')) {
+    ext.mailFrom = 'Cocoanetics Build Server <buildserver@cocoanetics.com>'
+  }
+
+  if (!project.hasProperty('mailToAddresses')) {
+    ext.mailToAddresses = nil
+  }
+
+  if (!project.hasProperty('mailMessage')) {
+    ext.mailMessage = nil
+  }
+
+  if (!project.hasProperty('mailEnableStartTLS')) {
+    ext.mailEnableStartTLS = true
+  }
+
+  if (!project.hasProperty('mailEnableSSL')) {
+    ext.mailEnableSSL = false
+  }
+
+	def mailParameters = [
+		mailhost: mailHost,
+		subject: mailSubject,
+    messagemimetype: mailMessageMimeType,
+		user: mailUser,
+		password: new String(mailPassword),
+    mailport: mailPort,
+    from: mailFrom,
+    tolist: mailToAddresses,
+    message: mailMessage,
+    enableStartTLS: mailEnableStartTLS,
+    ssl: mailEnableSSL
+	]
+
+	ant.mail( mailParameters ) {
+
+	}
+}

@@ -30,22 +30,23 @@ if (!project.hasProperty('webDAVFileSetNames')) {
   ext.webDAVFileSetNames = ['*']
 }
 
-task webdav() {
+print "WebDAV URL ${webDAVURL}"
 
-	doLast  {
+task webdav() << {
 
  		ant.sardine() {
 
+      // Create directory first
  			createDirectory(url: webDAVURL)
 
+      // Upload specified files
 			put(url: webDAVURL) {
 				fileset(dir: webDAVFileSetDirectory) {
 
           webDAVFileSetNames.each { fileInclude ->
               include(name: fileInclude)
-          }
         }
       }
- 		}
+    }
  	}
 }
